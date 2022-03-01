@@ -43,7 +43,7 @@ WCSimPrimaryGeneratorAction::WCSimPrimaryGeneratorAction(
 					  WCSimDetectorConstruction* myDC)
   :myDetector(myDC), vectorFileName("")
 {
-  //T. Akiri: Initialize GPS to allow for the laser use 
+  //T. Akiri: Initialize GPS to allow for the laser use
   MyGPS = new G4GeneralParticleSource();
 
   // Initialize to zero
@@ -53,9 +53,9 @@ WCSimPrimaryGeneratorAction::WCSimPrimaryGeneratorAction(
   nuEnergy = 0.;
   _counterRock=0; // counter for generated in Rock
   _counterCublic=0; // counter generated
-  
+
   //---Set defaults. Do once at beginning of session.
-  
+
   G4int n_particle = 1;
   particleGun = new G4ParticleGun(n_particle);
   particleGun->SetParticleEnergy(1.0*GeV);
@@ -68,14 +68,15 @@ WCSimPrimaryGeneratorAction::WCSimPrimaryGeneratorAction(
 
   particleGun->
     SetParticlePosition(G4ThreeVector(0.*m,0.*m,0.*m));
-    
+
   messenger = new WCSimPrimaryGeneratorMessenger(this);
-  useMulineEvt = true;
+  useCustomEvt = true;
+  useMulineEvt = false;
   useGunEvt    = false;
   useLaserEvt  = false;
   useGPSEvt    = false;
   useRootrackerEvt = false;
-  
+
   fEvNum = 0;
   fInputRootrackerFile = NULL;
   fNEntries = 1;
@@ -85,8 +86,8 @@ WCSimPrimaryGeneratorAction::~WCSimPrimaryGeneratorAction()
 {
     if (IsGeneratingVertexInRock()){
         G4cout << "Fraction of Rock volume is : " << G4endl;
-        G4cout << " Random number generated in Rock / in Cublic = " 
-            << _counterRock << "/" << _counterCublic 
+        G4cout << " Random number generated in Rock / in Cublic = "
+            << _counterRock << "/" << _counterCublic
             << " = " << _counterRock/(G4double)_counterCublic << G4endl;
     }
     inputFile.close();
@@ -104,13 +105,89 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     // We will need a particle table
     G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
 
-    // Temporary kludge to turn on/off vector text format 
+    // Temporary kludge to turn on/off vector text format
     G4bool useNuanceTextFormat = true;
 
   // Do for every event
 
+  if(useCustomEvt)
+  {
+
+    // Ensure the vector file has been set.
+    if ( !inputFile.is_open() ) {
+      G4cout << "Set a vector file using the command /mygen/vecfile name"
+	     << G4endl;
+      exit(-1);
+    }
+
+    // Set up variables for reading an event from the custom event file.
+    const int lineSize = 200;
+  	char      inBuf[lineSize];
+  	vector<string> token(1);
+
+    // Read the initial line, which should be: EVENT (#)
+  	token = readInLine(inputFile, lineSize, inBuf);
+    if(token[0] != "EVENT") {
+      G4cout << "Error reading custom event" << G4endl;
+    }
+    else {
+
+      // Read all particles until END is reached or too many particles are read.
+      bool evt_end = false;
+      const int MAX_PARTICLES = 1000000;
+      int nparticles = 0;
+      while(!evt_end && (nparticles < MAX_PARTICLES)) {
+
+        // Read the particle line.
+        token = readInLine(inputFile, lineSize, inBuf);
+
+        // If the line begins with END, this event is over.
+        if(token[0] == "END") {
+          evt_end = true;
+        }
+        else {
+
+          // Create a vertex for the specified particle assuming line format:
+          // PARTICLE x y z t p dx dy dz
+          G4int pdgid = atoi(token[1]);
+          G4ThreeVector vtx = G4ThreeVector(atof(token[2]),
+                                            atof(token[3]),
+                                            atof(token[4]));
+          G4double time = atof(token[5]);
+          G4double momentum = atof(token[6]);
+
+  		    G4ThreeVector dir = G4ThreeVector(atof(token[7]),
+  						      atof(token[8]),
+  						      atof(token[9]));
+
+  		    particleGun->
+  		      SetParticleDefinition(particleTable->
+  					    FindParticle(pdgid));
+  		    G4double mass =
+  		      particleGun->GetParticleDefinition()->GetPDGMass();
+
+          G4double energy = sqrt(momentum*momentum + mass*mass);
+  		    G4double ekin = energy - mass;
+
+  		    particleGun->SetParticleEnergy(ekin);
+  		    G4cout << "Particle: " << pdgid << " KE: " << ekin << G4endl;
+  		    particleGun->SetParticlePosition(vtx);
+          particleGun->SetParticleTime(time);
+  		    particleGun->SetParticleMomentumDirection(dir);
+  		    particleGun->GeneratePrimaryVertex(anEvent);
+
+          // Count the particle.
+          nparticles++;
+          if(nparticles >= MAX_PARTICLES) {
+            G4cout << "Error: read too many particles..." << G4endl;
+          }
+        }
+      }
+    }
+  }
+
   if (useMulineEvt)
-  { 
+  {
 
     if ( !inputFile.is_open() )
     {
@@ -120,7 +197,7 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     }
 
     //
-    // Documentation describing the nuance text format can be found here: 
+    // Documentation describing the nuance text format can be found here:
     // http://neutrino.phy.duke.edu/nuance-format/
     //
     // The format must be strictly adhered to for it to be processed correctly.
@@ -132,10 +209,10 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	const int lineSize=100;
 	char      inBuf[lineSize];
 	vector<string> token(1);
-	
+
 	token = readInLine(inputFile, lineSize, inBuf);
-	  
-        if (token.size() == 0) 
+
+        if (token.size() == 0)
 	  {
 	    G4cout << "end of nuance vector file!" << G4endl;
 	  }
@@ -155,12 +232,12 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	    vtx = G4ThreeVector(atof(token[1])*cm,
 				atof(token[2])*cm,
 				atof(token[3])*cm);
-	    
+
             // true : Generate vertex in Rock , false : Generate vertex in WC tank
             SetGenerateVertexInRock(false);
 
 	    // Next we read the incoming neutrino and target
-	    
+
 	    // First, the neutrino line
 
 	    token=readInLine(inputFile, lineSize, inBuf);
@@ -183,7 +260,7 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	    token=readInLine(inputFile, lineSize, inBuf);
 	    G4cout << "Vector File Record Number " << token[2] << G4endl;
             vecRecNumber = atoi(token[2]);
-	    
+
 	    // Now read the outgoing particles
 	    // These we will simulate.
 
@@ -205,7 +282,7 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 		    particleGun->
 		      SetParticleDefinition(particleTable->
 					    FindParticle(pdgid));
-		    G4double mass = 
+		    G4double mass =
 		      particleGun->GetParticleDefinition()->GetPDGMass();
 
 		    G4double ekin = energy - mass;
@@ -219,13 +296,13 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	      }
 	  }
       }
-    else 
-      {    // old muline format  
-	inputFile >> nuEnergy >> energy >> xPos >> yPos >> zPos 
+    else
+      {    // old muline format
+	inputFile >> nuEnergy >> energy >> xPos >> yPos >> zPos
 		  >> xDir >> yDir >> zDir;
-	
+
 	G4double random_z = ((myDetector->GetWaterTubePosition())
-			     - .5*(myDetector->GetWaterTubeLength()) 
+			     - .5*(myDetector->GetWaterTubeLength())
 			     + 1.*m + 15.0*m*G4UniformRand())/m;
 	zPos = random_z;
 	G4ThreeVector vtx = G4ThreeVector(xPos, yPos, random_z);
@@ -239,7 +316,7 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   }
 
     else if (useRootrackerEvt)
-    { 
+    {
         if ( !fInputRootrackerFile->IsOpen() )
         {
             G4cout << "Set a Rootracker vector file using the command /mygen/vecfile name"
@@ -261,8 +338,8 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
             fEvNum++;
         }
         else{
-            G4cout << "End of File" << G4endl; 
-            return; 
+            G4cout << "End of File" << G4endl;
+            return;
         }
 
         // Get the neutrino direction
@@ -292,14 +369,14 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
                 fEvNum++;
             }
             else{
-                G4cout << "End of File" << G4endl; 
-                return; 
+                G4cout << "End of File" << G4endl;
+                return;
             }
             //Convert coordinates
             xPos = fTmpRootrackerVtx->EvtVtx[0] - x_offset;
-            yPos = fTmpRootrackerVtx->EvtVtx[1] - y_offset; 
+            yPos = fTmpRootrackerVtx->EvtVtx[1] - y_offset;
             zPos = fTmpRootrackerVtx->EvtVtx[2] - z_offset;
-        } 
+        }
 
         //Generate particles
         //i = 0 is the neutrino
@@ -396,12 +473,12 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     {
       //T. Akiri: Create the GPS LASER event
       MyGPS->GeneratePrimaryVertex(anEvent);
-      
+
       G4ThreeVector P   =anEvent->GetPrimaryVertex()->GetPrimary()->GetMomentum();
       G4ThreeVector vtx =anEvent->GetPrimaryVertex()->GetPosition();
       G4double m       =anEvent->GetPrimaryVertex()->GetPrimary()->GetMass(); // will be 0 for photon anyway, but for other gps particles not
       G4int pdg         =anEvent->GetPrimaryVertex()->GetPrimary()->GetPDGcode();
-      
+
       G4ThreeVector dir  = P.unit();
       //G4double E         = std::sqrt((P.dot(P)));
       G4double E         = std::sqrt((P.dot(P))+(m*m));
@@ -417,15 +494,15 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   else if (useGPSEvt)
     {
       MyGPS->GeneratePrimaryVertex(anEvent);
-      
+
       G4ThreeVector P   =anEvent->GetPrimaryVertex()->GetPrimary()->GetMomentum();
       G4ThreeVector vtx =anEvent->GetPrimaryVertex()->GetPosition();
       G4double m        =anEvent->GetPrimaryVertex()->GetPrimary()->GetMass();
       G4int pdg         =anEvent->GetPrimaryVertex()->GetPrimary()->GetPDGcode();
-      
+
       G4ThreeVector dir  = P.unit();
       G4double E         = std::sqrt((P.dot(P))+(m*m));
-      
+
       SetVtx(vtx);
       SetBeamEnergy(E);
       SetBeamDir(dir);
@@ -458,12 +535,12 @@ G4String WCSimPrimaryGeneratorAction::GetGeneratorTypeString()
 }
 
 // Returns a vector with the tokens
-vector<string> tokenize( string separators, string input ) 
+vector<string> tokenize( string separators, string input )
 {
   std::size_t startToken = 0, endToken; // Pointers to the token pos
   vector<string> tokens;  // Vector to keep the tokens
-  
-  if( separators.size() > 0 && input.size() > 0 ) 
+
+  if( separators.size() > 0 && input.size() > 0 )
     {
 
         while( startToken < input.size() )
@@ -472,7 +549,7 @@ vector<string> tokenize( string separators, string input )
             startToken = input.find_first_not_of( separators, startToken );
 
             // If found...
-            if( startToken != input.npos ) 
+            if( startToken != input.npos )
             {
                 // Find end of token
                 endToken = input.find_first_of( separators, startToken );
@@ -497,8 +574,8 @@ void WCSimPrimaryGeneratorAction::OpenRootrackerFile(G4String fileName)
     if (fInputRootrackerFile) fInputRootrackerFile->Delete();
 
     fInputRootrackerFile = TFile::Open(fileName.data());
-    if (!fInputRootrackerFile){ 
-        G4cout << "Cannot open: " << fileName << G4endl; 
+    if (!fInputRootrackerFile){
+        G4cout << "Cannot open: " << fileName << G4endl;
         exit(1);
     }
 

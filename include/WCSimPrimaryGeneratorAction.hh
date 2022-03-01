@@ -67,7 +67,7 @@ class WCSimPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
         G4String GetGeneratorTypeString();
 
         void SaveOptionsToOutput(WCSimRootOptions * wcopt);
-    
+
   private:
         WCSimDetectorConstruction*      myDetector;
         G4ParticleGun*                  particleGun;
@@ -75,6 +75,7 @@ class WCSimPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
         WCSimPrimaryGeneratorMessenger* messenger;
 
         // Variables set by the messenger
+        G4bool   useCustomEvt;
         G4bool   useMulineEvt;
         G4bool   useRootrackerEvt;
         G4bool   useGunEvt;
@@ -102,7 +103,7 @@ class WCSimPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
         G4double xPos, yPos, zPos;
         G4double xDir, yDir, zDir;
 
-        G4int    _counterRock; 
+        G4int    _counterRock;
         G4int    _counterCublic;
 
         // Counters to read Rootracker event file
@@ -135,13 +136,13 @@ class WCSimPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
         //T. Akiri: Addition of function for the laser flag
         inline void SetLaserEvtGenerator(G4bool choice) { useLaserEvt = choice; }
         inline G4bool IsUsingLaserEvtGenerator()  { return useLaserEvt; }
-  
+
         inline void SetGPSEvtGenerator(G4bool choice) { useGPSEvt = choice; }
         inline G4bool IsUsingGPSEvtGenerator()  { return useGPSEvt; }
 
-        inline void OpenVectorFile(G4String fileName) 
+        inline void OpenVectorFile(G4String fileName)
         {
-            if ( inputFile.is_open() ) 
+            if ( inputFile.is_open() )
                 inputFile.close();
 
             vectorFileName = fileName;
@@ -157,11 +158,9 @@ class WCSimPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
         inline void SetPoissonPMT(G4bool choice) { usePoissonPMT = choice; }
         inline G4bool IsUsingPoissonPMT(){ return usePoissonPMT; }
-  
+
         inline void SetPoissonPMTMean(G4double val){ poissonPMTMean = val; }
         inline G4double GetPoissonPMTMean(){ return poissonPMTMean; }
 };
 
 #endif
-
-
