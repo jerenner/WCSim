@@ -359,7 +359,7 @@ void WCSimWCTriggerBase::FillDigitsCollection(WCSimWCDigitsCollection* WCDCPMT, 
 
 	  //first apply time offsets
 	  float peSmeared = (*WCDCPMT)[i]->GetPe(ip);
-	  G4double digihittime = -triggertime
+	  G4double digihittime = -950. + //-triggertime
 	    + WCSimWCTriggerBase::offset
 	    + digit_time;
 

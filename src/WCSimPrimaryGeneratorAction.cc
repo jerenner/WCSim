@@ -8,6 +8,7 @@
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ThreeVector.hh"
+#include "G4RandomDirection.hh"
 #include "globals.hh"
 #include "Randomize.hh"
 #include <fstream>
@@ -59,7 +60,7 @@ WCSimPrimaryGeneratorAction::WCSimPrimaryGeneratorAction(
   G4int n_particle = 1;
   particleGun = new G4ParticleGun(n_particle);
   particleGun->SetParticleEnergy(1.0*GeV);
-  particleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,1.0));
+  particleGun->SetParticleMomentumDirection(G4RandomDirection()); //G4ThreeVector(0.,0.,1.0));
 
   G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
   G4String particleName;
@@ -372,6 +373,8 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
   else if (useGunEvt)
   {      // manual gun operation
+    particleGun->SetParticleMomentumDirection(G4RandomDirection());
+    particleGun->SetParticleEnergy((9.5*MeV)*G4UniformRand() + 0.5*MeV);
     particleGun->GeneratePrimaryVertex(anEvent);
 
     G4ThreeVector P  =anEvent->GetPrimaryVertex()->GetPrimary()->GetMomentum();
