@@ -127,7 +127,10 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
     // Read the initial line, which should be: EVENT (#)
   	token = readInLine(inputFile, lineSize, inBuf);
-    if(token[0] != "EVENT") {
+    if(token.size() == 0) {
+      G4cout << "End of custom event file" << G4endl;
+    }
+    else if(token[0] != "EVENT") {
       G4cout << "Error reading custom event" << G4endl;
     }
     else {

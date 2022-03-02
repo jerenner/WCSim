@@ -140,6 +140,9 @@ class WCSimPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
         inline void SetGPSEvtGenerator(G4bool choice) { useGPSEvt = choice; }
         inline G4bool IsUsingGPSEvtGenerator()  { return useGPSEvt; }
 
+        inline void SetCustomEvtGenerator(G4bool choice) { useCustomEvt = choice; }
+        inline G4bool IsUsingCustomEvtGenerator()  { return useCustomEvt; }
+
         inline void OpenVectorFile(G4String fileName)
         {
             if ( inputFile.is_open() )

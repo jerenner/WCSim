@@ -15,10 +15,10 @@ WCSimPrimaryGeneratorMessenger::WCSimPrimaryGeneratorMessenger(WCSimPrimaryGener
   genCmd = new G4UIcmdWithAString("/mygen/generator",this);
   genCmd->SetGuidance("Select primary generator.");
 
-  genCmd->SetGuidance(" Available generators : muline, gun, laser, gps, rootracker");
+  genCmd->SetGuidance(" Available generators : muline, gun, laser, gps, rootracker, custom");
   genCmd->SetParameterName("generator",true);
   genCmd->SetDefaultValue("muline");
-  genCmd->SetCandidates("muline gun laser gps rootracker");
+  genCmd->SetCandidates("muline gun laser gps rootracker custom");
 
   fileNameCmd = new G4UIcmdWithAString("/mygen/vecfile",this);
   fileNameCmd->SetGuidance("Select the file of vectors.");
@@ -59,6 +59,7 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
       myAction->SetRootrackerEvtGenerator(false);
       myAction->SetLaserEvtGenerator(false);
       myAction->SetGPSEvtGenerator(false);
+      myAction->SetCustomEvtGenerator(false);
     }
     else if ( newValue == "gun")
     {
@@ -67,6 +68,7 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
       myAction->SetRootrackerEvtGenerator(false);
       myAction->SetLaserEvtGenerator(false);
       myAction->SetGPSEvtGenerator(false);
+      myAction->SetCustomEvtGenerator(false);
     }
     else if ( newValue == "laser")   //T. Akiri: Addition of laser
     {
@@ -75,6 +77,7 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
       myAction->SetRootrackerEvtGenerator(false);
       myAction->SetLaserEvtGenerator(true);
       myAction->SetGPSEvtGenerator(false);
+      myAction->SetCustomEvtGenerator(false);
     }
     else if ( newValue == "gps")
     {
@@ -83,6 +86,7 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
       myAction->SetRootrackerEvtGenerator(false);
       myAction->SetLaserEvtGenerator(false);
       myAction->SetGPSEvtGenerator(true);
+      myAction->SetCustomEvtGenerator(false);
     }
     else if ( newValue == "rootracker")   //M. Scott: Addition of Rootracker events
     {
@@ -91,6 +95,16 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
       myAction->SetGunEvtGenerator(false);
       myAction->SetLaserEvtGenerator(false);
       myAction->SetGPSEvtGenerator(false);
+      myAction->SetCustomEvtGenerator(false);
+    }
+    else if ( newValue == "custom")
+    {
+      myAction->SetMulineEvtGenerator(false);
+      myAction->SetRootrackerEvtGenerator(false);
+      myAction->SetGunEvtGenerator(false);
+      myAction->SetLaserEvtGenerator(false);
+      myAction->SetGPSEvtGenerator(false);
+      myAction->SetCustomEvtGenerator(true);
     }
   }
 
@@ -119,7 +133,7 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
       }
       else myAction->SetPoissonPMT(false);
     }
-  
+
   if( command == poisMeanCmd )
     {
       myAction->SetPoissonPMTMean(poisMeanCmd->GetNewDoubleValue(newValue));
@@ -130,7 +144,7 @@ void WCSimPrimaryGeneratorMessenger::SetNewValue(G4UIcommand * command,G4String 
 G4String WCSimPrimaryGeneratorMessenger::GetCurrentValue(G4UIcommand* command)
 {
   G4String cv;
-  
+
   if( command==genCmd )
   {
     if(myAction->IsUsingMulineEvtGenerator())
@@ -144,7 +158,6 @@ G4String WCSimPrimaryGeneratorMessenger::GetCurrentValue(G4UIcommand* command)
     else if(myAction->IsUsingRootrackerEvtGenerator())
       { cv = "rootracker"; }   //M. Scott: Addition of Rootracker events
   }
-  
+
   return cv;
 }
-
