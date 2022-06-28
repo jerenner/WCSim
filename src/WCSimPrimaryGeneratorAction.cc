@@ -373,8 +373,9 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
   else if (useGunEvt)
   {      // manual gun operation
-    particleGun->SetParticleMomentumDirection(G4RandomDirection());
-    particleGun->SetParticleEnergy((9.5*MeV)*G4UniformRand() + 0.5*MeV);
+//    particleGun->SetParticleMomentumDirection(G4RandomDirection());
+//    particleGun->SetParticleEnergy((9.5*MeV)*G4UniformRand() + 0.5*MeV);
+//    particleGun->SetParticleEnergy(3*MeV);
     particleGun->GeneratePrimaryVertex(anEvent);
 
     G4ThreeVector P  =anEvent->GetPrimaryVertex()->GetPrimary()->GetMomentum();
@@ -387,9 +388,8 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
     mode            = PARTICLEGUN;
 
-//     particleGun->SetParticleEnergy(E);
-//     particleGun->SetParticlePosition(vtx);
-//     particleGun->SetParticleMomentumDirection(dir);
+    G4cout << "Using gun evt with kinetic energy " << (E-m) << " and PDG " << pdg << " and mass " << m << " and P " << P/MeV << G4endl;
+
     SetVtx(vtx);
     SetBeamEnergy(E);
     SetBeamDir(dir);
@@ -428,7 +428,8 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
       
       G4ThreeVector dir  = P.unit();
       G4double E         = std::sqrt((P.dot(P))+(m*m));
-      
+     
+      G4cout << "Using GPS evt with energy " << E << " and PDG " << pdg << " and mass " << m << " and P " << P << G4endl;
       SetVtx(vtx);
       SetBeamEnergy(E);
       SetBeamDir(dir);
