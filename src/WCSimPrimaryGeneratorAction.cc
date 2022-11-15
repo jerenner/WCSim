@@ -8,6 +8,7 @@
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ThreeVector.hh"
+#include "G4RandomDirection.hh"
 #include "globals.hh"
 #include "Randomize.hh"
 #include <fstream>
@@ -158,14 +159,24 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
                                             atof(token[4]));
           G4double time = atof(token[5]);
           G4double momentum = atof(token[6]);
+	  G4String particleName;
 
   		    G4ThreeVector dir = G4ThreeVector(atof(token[7]),
   						      atof(token[8]),
   						      atof(token[9]));
 
-  		    particleGun->
-  		      SetParticleDefinition(particleTable->
-  					    FindParticle(pdgid));
+  		    if(pdgid == 22){
+			if(momentum < 100*eV){
+				particleGun->SetParticleDefinition(particleTable->FindParticle(particleName="opticalphoton"));
+			}
+			else {
+				particleGun->SetParticleDefinition(particleTable->FindParticle(particleName="gamma"));
+		    	}
+		    }
+		    else {
+			particleGun->SetParticleDefinition(particleTable->FindParticle(pdgid));
+		    }
+
   		    G4double mass =
   		      particleGun->GetParticleDefinition()->GetPDGMass();
 
@@ -452,6 +463,8 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
   else if (useGunEvt)
   {      // manual gun operation
+
+    particleGun->SetParticleMomentumDirection(G4RandomDirection());
     particleGun->GeneratePrimaryVertex(anEvent);
 
     G4ThreeVector P  =anEvent->GetPrimaryVertex()->GetPrimary()->GetMomentum();
@@ -464,9 +477,6 @@ void WCSimPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
     mode            = PARTICLEGUN;
 
-//     particleGun->SetParticleEnergy(E);
-//     particleGun->SetParticlePosition(vtx);
-//     particleGun->SetParticleMomentumDirection(dir);
     SetVtx(vtx);
     SetBeamEnergy(E);
     SetBeamDir(dir);
